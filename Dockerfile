@@ -43,7 +43,6 @@ RUN set -x && curl -sLo /usr/local/bin/jq https://github.com/stedolan/jq/release
     chmod +x /usr/local/bin/jq
 
 # sonar-scanner
-RUN apt-get update && apt-get install -y unzip
 RUN mkdir /opt/sonar-scanner
 RUN set -x && curl -sLo /opt/sonar-scanner/sonar-scanner-2.6.zip https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-2.6.zip && \
     unzip -d /opt/sonar-scanner  /opt/sonar-scanner/sonar-scanner-2.6.zip && \
