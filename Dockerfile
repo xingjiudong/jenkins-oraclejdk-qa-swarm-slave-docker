@@ -2,7 +2,10 @@ FROM openfrontier/jenkins-swarm-maven-slave:oracle-jdk
 
 MAINTAINER XJD <xing.jiudong@trans-cosmos.com.cn>
 
-ENV NODEJS_VERSION=v4.2.6 \
+ENV RUBY_MAJOR=2.3 \
+    RUBY_VERSION=2.3.0 \
+    BUGSPOTS_VERSION=0.2.1 \
+    NODEJS_VERSION=v4.2.6 \
     JQ_VERSION=1.5 \
     SONAR_SCANNER_VERSION=2.6
 
@@ -10,19 +13,12 @@ ENV REGISTRY_HOST=${REGISTRY_URL:-localhost}
 
 USER root
 
-RUN yum -y groupinstall 'Development Tools' && yum -y install \
-    ImageMagick-devel \
+# Install ruby
+RUN yum -y install \
     bzip2-devel \
-    libcurl \
-    libcurl-devel \
-    openssl-devel \
-    libevent-devel \
     libffi-devel \
     glib2-devel \
     libjpeg-devel \
-    ncurses-devel \
-    readline \
-    readline-devel \
     sqlite-devel \
     openssl \
     openssl-devel \
@@ -36,46 +32,16 @@ RUN yum -y groupinstall 'Development Tools' && yum -y install \
     make \
     && yum clean all
 
-# To Build ruby 2.1, Autoconf version 2.67 or higher is required
-RUN mkdir -p /usr/src/autoconf \
-    && curl -fsSL http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz \
-    | tar -xzC /usr/src/autoconf \
-    && cd /usr/src/autoconf/autoconf-2.69 \
+RUN set -x \
+    && curl  -sLo /usr/local/src/ruby-$RUBY_VERSION.tar.gz  "http://cache.ruby-lang.org/pub/ruby/$RUBY_MAJOR/ruby-$RUBY_VERSION.tar.gz" \
+    && tar -zxvf /usr/local/src/ruby-$RUBY_VERSION.tar.gz -C /usr/local/src \
+    && cd /usr/local/src/ruby-$RUBY_VERSION \
     && ./configure \
     && make \
-    && make install \
-    && rm -r /usr/src/autoconf    
-
-ENV RUBY_MAJOR 2.3
-ENV RUBY_VERSION 2.3.0
-
-# some of ruby's build scripts are written in ruby
-# we purge this later to make sure our final image uses what we just built
-RUN yum -y install ruby && yum clean all \
-	&& mkdir -p /usr/src/ruby \
-	&& curl -SL "http://cache.ruby-lang.org/pub/ruby/$RUBY_MAJOR/ruby-$RUBY_VERSION.tar.bz2" \
-		| tar -xjC /usr/src/ruby --strip-components=1 \
-	&& cd /usr/src/ruby \
-	&& autoconf \
-	&& ./configure --disable-install-doc \
-	&& make -j"$(nproc)" \
-	&& make install
-
-# skip installing gem documentation
-RUN echo 'gem: --no-rdoc --no-ri' >> "$HOME/.gemrc"
-
-# install things globally, for great justice
-ENV GEM_HOME /usr/local/bundle
-ENV PATH $GEM_HOME/bin:$PATH
-RUN gem install bundler \
-	&& bundle config --global path "$GEM_HOME" \
-	&& bundle config --global bin "$GEM_HOME/bin"
-
-# don't create ".bundle" in all our apps
-ENV BUNDLE_APP_CONFIG $GEM_HOME
+    && make install
 
 # Install bugspots
-RUN gem install bugspots
+RUN gem install bugspots --version=${BUGSPOTS_VERSION}
 
 # nodejs
 RUN set -x && mkdir /opt/node && curl -fsSL https://nodejs.org/dist/${NODEJS_VERSION}/node-${NODEJS_VERSION}-linux-x64.tar.gz \
