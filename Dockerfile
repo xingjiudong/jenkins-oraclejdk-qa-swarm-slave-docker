@@ -1,4 +1,4 @@
-FROM openfrontier/jenkins-swarm-maven-slave:oracle-jdk
+FROM openfrontier/jenkins-swarm-maven-slave:3.4-8u171-jdk
 
 MAINTAINER XJD <xing.jiudong@trans-cosmos.com.cn>
 
@@ -14,23 +14,27 @@ ENV REGISTRY_HOST=${REGISTRY_URL:-localhost}
 USER root
 
 # Install ruby
-RUN yum -y install \
-    bzip2-devel \
-    libffi-devel \
-    glib2-devel \
-    libjpeg-devel \
-    sqlite-devel \
-    openssl \
-    openssl-devel \
-    libxml2-devel \
-    libxslt-devel \
-    zlib-devel \
-    libyaml-devel \
-    cmake \
-    gcc \
-    gcc-c++ \
-    make \
-    && yum clean all
+RUN set -ex \
+        \
+        && buildDeps=' \
+                bison \
+                dpkg-dev \
+                libgdbm-dev \
+                libssl1.0-dev \
+                gcc \
+                g++ \
+                cmake \
+                pkg-config \
+                make \
+                zlib1g-dev \
+                libyaml-dev \
+                libxml2-dev \
+		libxslt-dev \
+                bzip2 \
+        ' \
+#        && apt-get update \
+        && apt-get install -y --no-install-recommends $buildDeps \
+        && rm -rf /var/lib/apt/lists/*
 
 RUN set -x \
     && curl  -sLo /usr/local/src/ruby-$RUBY_VERSION.tar.gz  "http://cache.ruby-lang.org/pub/ruby/$RUBY_MAJOR/ruby-$RUBY_VERSION.tar.gz" \
